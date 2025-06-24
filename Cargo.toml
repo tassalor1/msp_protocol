@@ -5,7 +5,7 @@ edition = "2024"
 
 license     = "MIT OR Apache-2.0"
 description = "MultiWii Serial Protocol (MSP) encoder/decoder and transport layer"
-repository  = "https://github.com/tassaalor1/msp_protocol"
+repository  = "https://github.com/tassalor1/msp_protocol"
 keywords    = ["drone", "msp", "betaflight", "serial"]
 
 [dependencies]
