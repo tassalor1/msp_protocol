@@ -1,3 +1,4 @@
+
 use std::f64::consts::PI;
 use std::io;
 use std::io::Write;
@@ -98,8 +99,7 @@ fn main() -> Result<()> {
         for b in response.as_slice() {
             let s = parser.parse(*b);
             if let Ok(Some(p)) = s {
-                if let Ok(cmd) = MspCommandCode::try_from(p.cmd) {
-                match cmd {
+                match p {
                     MspCommandCode::MSP_RAW_IMU => {
                         let imu = p.decode_as::<MspRawImu>()?;
                         println!("Imu: {:?}", imu);
@@ -113,9 +113,6 @@ fn main() -> Result<()> {
                         print!("\rRC: {:?}    ", b);
                         io::stdout().flush()?;
                     },
-                    other => {
-                        // println!("Other Response: {:?}", other);
-                    }
                 }}
             }
         }
