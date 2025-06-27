@@ -57,13 +57,13 @@ fn wait_for_port(port_name: &str, baud_rate: u32, timeout_ms: u64) -> Box<dyn Se
 }
 
 fn main() -> Result<()> {
-    let port_name = "/dev/ttyACM0";
+    let port_name = "/dev/cu.usbmodem3754346A31331";
     let baud_rate = 1_000_000;
     // let port_name = "/dev/ttyUSB0";
     // let baud_rate = 115200;
 
     let mut port = wait_for_port(port_name, baud_rate, 200);
-    let mut response: MspPacketData = MspPacketData::new();
+    let mut response = MspPacketData::new();
 
     let mut raw_cr = MspRc::new();
 
@@ -75,7 +75,7 @@ fn main() -> Result<()> {
     loop {
         let mut parser = MspParser::new(); // need to be new
 
-        //send_request(&mut *port, MspCommandCode::MSP_RAW_IMU as u16, &[])?;
+        send_request(&mut *port, MspCommandCode::MSP_RAW_IMU as u16, &[])?;
         send_request(&mut *port, MspCommandCode::MSP_BATTERY_STATE as u16, &[])?;
         send_request(&mut *port, MspCommandCode::MSP_RC as u16, &[])?;
 
@@ -96,24 +96,24 @@ fn main() -> Result<()> {
         }
         // println!("Received: {:?}", response);
 
-        for b in response.as_slice() {
-            let s = parser.parse(*b);
-            if let Ok(Some(p)) = s {
-                match p {
-                    MspCommandCode::MSP_RAW_IMU => {
-                        let imu = p.decode_as::<MspRawImu>()?;
+        for byte in port. {
+            if let Ok(Some(pkt)) = parser.parse(*byte) {
+                match MspCommandCode::try_from(pkt.cmd) {
+                    Ok(MspCommandCode::MSP_RAW_IMU) => {
+                        let imu = pkt.decode_as::<MspRawImu>()?;
                         println!("Imu: {:?}", imu);
                     },
-                    MspCommandCode::MSP_BATTERY_STATE => {
-                        let b = p.decode_as::<MspBatteryState>()?;
-                        // println!("Cell V: {}", b.cell_voltage());
+                    Ok(MspCommandCode::MSP_BATTERY_STATE) => {
+                        let byte = pkt.decode_as::<MspBatteryState>()?;
+                        //println!("Cell V: {}", byte.cell_voltage());
                     },
-                    MspCommandCode::MSP_RC => {
-                        let b = p.decode_as::<MspRc>()?;
-                        print!("\rRC: {:?}    ", b);
+                    Ok(MspCommandCode::MSP_RC) => {
+                        let byte = pkt.decode_as::<MspRc>()?;
+                        print!("\rRC: {:?}    ", byte);
                         io::stdout().flush()?;
                     },
-                }}
+                    _ => {}
+                }
             }
         }
     }
