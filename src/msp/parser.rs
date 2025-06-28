@@ -239,4 +239,100 @@ impl Default for MspParser {
     }
 }
 
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::msp::parser::{self, MspParser};
+    use crate::msp::packet::MspPacket;
+    use crate::msp::commands::MspCommandCode;
+    use smallvec::smallvec;
+    
+    #[test]
+    fn parse_v1() {
+        // build packet we epxect from drone
+        let pkt = MspPacket {
+            cmd: MspCommandCode::MSP_FC_VARIANT as u16,
+            direction: MspPacketDirection::FromFlightController,
+            data: MspPacketData(smallvec![0xbe, 0xef]),
+        };
 
+        //seralize this packet 
+        let mut buf = vec![0u8; pkt.packet_size_bytes()];
+        pkt.serialize(&mut buf).unwrap();
+
+        //parse the seralized packet
+        let mut parser = MspParser::new();
+        let mut result = None;
+        for byte in buf{
+            if let Ok(Some(pkt)) = parser.parse( byte) {
+                result = Some(pkt);
+            }
+        }
+        //assert the parsed pkt against the original packet
+        assert_eq!(Some(pkt), result);
+    }
+
+    #[test]
+    fn parse_v2() {
+        // build packet we epxect from drone
+        let pkt = MspPacket {
+            cmd: MspCommandCode::MSP_FC_VARIANT as u16,
+            direction: MspPacketDirection::FromFlightController,
+            data: MspPacketData(smallvec![0xbe, 0xef]),
+        };
+
+        //seralize this packet 
+        let mut buf = vec![0u8; pkt.packet_size_bytes_v2()];
+        pkt.serialize_v2(&mut buf).unwrap();
+
+        //parse the seralized packet
+        let mut parser = MspParser::new();
+        let mut result = None;
+        for byte in buf{
+            if let Ok(Some(pkt)) = parser.parse( byte) {
+                result = Some(pkt);
+            }
+        }
+        //assert the parsed pkt against the original packet
+        assert_eq!(Some(pkt), result);
+    }
+    #[test]
+    fn bad_crc_header() {
+        // build packet we epxect from drone
+        let pkt = MspPacket {
+            cmd: MspCommandCode::MSP_FC_VARIANT as u16,
+            direction: MspPacketDirection::FromFlightController,
+            data: MspPacketData(smallvec![0xbe, 0xef]),
+        };
+
+        //seralize this packet 
+        let mut buf = vec![0u8; pkt.packet_size_bytes()];
+        pkt.serialize(&mut buf).unwrap();
+        //take last byte and corrupt
+        let bad_crc = buf.last_mut().unwrap();
+        *bad_crc ^= 0xFF;
+
+        //parse all but last bad byte
+        let mut parser = MspParser::new();
+        for &b in &buf[..buf.len() - 1] {
+            assert_eq!(parser.parse(b).unwrap(), None);
+        }
+        // parse last value
+        let err = parser.parse(buf[buf.len() - 1]).unwrap_err();
+
+        // calculate what the parser *would* have computed
+        let expected_crc = {
+            let mut crc = buf[3] ^ buf[4];
+            for &d in &buf[5..buf.len()-1] { crc ^= d; }
+            crc
+        };
+        
+        //assert the parsed pkt against the original packet
+        assert_eq!(err, MspPacketParseError::CrcMismatch {
+                expected: buf[buf.len() - 1],
+                calculated: expected_crc
+            });
+    }
+
+
+}

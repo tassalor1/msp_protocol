@@ -7,9 +7,7 @@ pub struct MspPacketData(pub(crate) SmallVec<[u8; 256]>);
 
 impl MspPacketData {
     pub fn new() -> MspPacketData {
-        let mut inner = SmallVec::new();
-        inner.resize(256, 0);
-        MspPacketData(inner)
+        MspPacketData(SmallVec::new())
     }
 
     pub fn as_mut_slice(&mut self) -> &mut [u8] {
