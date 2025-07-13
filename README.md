@@ -27,7 +27,7 @@ use msp_protocol::{
 };
 
 let mut port   = wait_for_port("/dev/ttyUSB0", 115_200, 200);
-let mut parser = MspParser::new();
+let mut parser = MspParser::from_fc();
 let mut buf    = [0u8; 256];
 
 send_request(&mut *port, MspCommandCode::MSP_RAW_IMU as u16, &[])?;
