@@ -159,7 +159,7 @@ mod test {
         assert_eq!(81, crc);
 
         let mut packet_parsed = None;
-        let mut parser = MspParser::new();
+        let mut parser = MspParser::to_fc();
         for b in output {
             let s = parser.parse(b);
             if let Ok(Some(p)) = s {
@@ -178,7 +178,7 @@ mod test {
 
             packet.serialize(&mut output).unwrap();
 
-            let mut parser = MspParser::new();
+            let mut parser = MspParser::to_fc();
             let mut packet_parsed = None;
             for b in output {
                 let s = parser.parse(b);

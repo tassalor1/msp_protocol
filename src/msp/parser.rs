@@ -44,17 +44,24 @@ pub struct MspParser {
 
 impl MspParser {
     /// Create a new parser
-    pub fn new() -> MspParser {
+    pub fn new(dir:MspPacketDirection ) -> MspParser {
         Self {
             state: MspParserState::Header1,
             packet_version: MspVersion::V1,
-            packet_direction: MspPacketDirection::ToFlightController,
+            packet_direction: dir,
             packet_data_length_remaining: 0,
             packet_cmd: 0,
             packet_data: MspPacketData::new(),
             packet_crc: 0,
             packet_crc_v2: CRCu8::crc8dvb_s2(),
         }
+    }
+
+    pub fn from_fc() -> Self {
+        Self::new(MspPacketDirection::FromFlightController)
+    }
+    pub fn to_fc() -> Self {
+        Self::new(MspPacketDirection::ToFlightController)
     }
 
     /// Are we waiting for the header of a brand new packet?
@@ -235,7 +242,7 @@ impl MspParser {
 
 impl Default for MspParser {
     fn default() -> Self {
-        Self::new()
+        Self::to_fc()
     }
 }
 
@@ -261,7 +268,7 @@ mod test {
         pkt.serialize(&mut buf).unwrap();
 
         //parse the seralized packet
-        let mut parser = MspParser::new();
+        let mut parser = MspParser::from_fc();
         let mut result = None;
         for byte in buf{
             if let Ok(Some(pkt)) = parser.parse( byte) {
@@ -286,7 +293,7 @@ mod test {
         pkt.serialize_v2(&mut buf).unwrap();
 
         //parse the seralized packet
-        let mut parser = MspParser::new();
+        let mut parser = MspParser::from_fc();
         let mut result = None;
         for byte in buf{
             if let Ok(Some(pkt)) = parser.parse( byte) {
@@ -313,7 +320,7 @@ mod test {
         *bad_crc ^= 0xFF;
 
         //parse all but last bad byte
-        let mut parser = MspParser::new();
+        let mut parser = MspParser::from_fc();
         for &b in &buf[..buf.len() - 1] {
             assert_eq!(parser.parse(b).unwrap(), None);
         }

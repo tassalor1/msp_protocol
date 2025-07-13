@@ -23,7 +23,7 @@ pub fn send_request(port: &mut dyn SerialPort, cmd: u16, payload:&[u8]) -> Resul
 }
 
 pub fn read_until_response(port: &mut dyn SerialPort, cmd: u16) -> Result<MspPacket> {
-    let mut parser = MspParser::new();
+    let mut parser = MspParser::from_fc();
     let mut response: Vec<u8> = vec![0; 64];
     loop {
         port.read(&mut response.as_mut_slice())?;
